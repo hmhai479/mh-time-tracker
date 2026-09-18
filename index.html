@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MH Time Tracker</title>
+<style>
+:root{
+  --bg:#181818; --panel:#202020; --panel2:#242424; --text:#f2f2f2;
+  --muted:#9b9b9b; --border:#383838; --accent:#25a35a; --accent2:#1f8d4e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:720px;margin:0 auto;padding:16px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}
+input{
+  width:100%;border:1px solid var(--border);background:var(--panel);color:var(--text);
+  border-radius:9px;padding:11px 12px;font-size:15px;outline:none
+}
+input:focus{border-color:#5a5a5a}
+.task-input{margin-bottom:14px}
+.timer{
+  text-align:center;font-variant-numeric:tabular-nums;
+  font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  font-size:clamp(38px,8vw,66px);letter-spacing:-2px;margin:12px 0 15px
+}
+.actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+button{
+  border:1px solid var(--border);background:var(--panel);color:var(--text);
+  border-radius:9px;padding:10px 15px;font-size:14px;cursor:pointer
+}
+button:hover{background:var(--panel2)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:var(--accent2)}
+.status{text-align:center;color:var(--muted);font-size:12px;min-height:18px;margin:10px 0 17px}
+.section{border-top:1px solid var(--border);padding-top:14px;margin-top:10px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.section-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+.log{display:flex;flex-direction:column;gap:7px}
+.row{
+  display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;
+  background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:8px 9px
+}
+.name{min-width:0}
+.name input{padding:7px 8px;font-size:14px}
+.name-text{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.duration{font-variant-numeric:tabular-nums;font-family:"SFMono-Regular",Consolas,monospace;color:#ddd;font-size:13px;white-space:nowrap}
+.row-actions{display:flex;gap:5px}
+.row-actions button{padding:6px 8px;font-size:12px}
+.total{display:flex;justify-content:space-between;margin-top:10px;color:var(--muted);font-size:13px}
+.total strong{color:var(--text);font-variant-numeric:tabular-nums;font-family:monospace}
+.bottom{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.bottom button{font-size:12px;padding:8px 10px}
+.empty{color:var(--muted);font-size:13px;padding:9px 2px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#303030;color:#fff;border:1px solid #4a4a4a;border-radius:8px;padding:8px 12px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .15s}
+.toast.show{opacity:1}
+@media(max-width:430px){
+  .app{padding:10px}.row{grid-template-columns:minmax(0,1fr) auto}.row-actions{grid-column:1/-1}
+  .duration{justify-self:end}.timer{font-size:42px}
+}
+</style>
+</head>
+<body>
+<main class="app" id="tracker">
+  <div class="task-input">
+    <label for="task">Task</label>
+    <input id="task" type="text" maxlength="120" placeholder="e.g. Rigging">
+  </div>
+
+  <div class="timer" id="timer" aria-live="polite">00:00:00.00</div>
+
+  <div class="actions">
+    <button id="start" class="primary" type="button">▶ Start</button>
+    <button id="pause" type="button" disabled>⏸ Pause</button>
+    <button id="save" type="button" disabled>Save session</button>
+  </div>
+  <div class="status" id="status"></div>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">WORK LOG</div>
+    </div>
+    <div class="log" id="log"></div>
+    <div class="total"><span>TOTAL</span><strong id="total">00:00:00.00</strong></div>
+    <div class="bottom">
+      <button id="copyLog" type="button">Copy Log</button>
+      <button id="copyTable" type="button">Copy Table</button>
+      <button id="clear" type="button">Clear Log</button>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const KEY = "mh-time-tracker-v1";
+  const $ = id => document.getElementById(id);
+  const taskInput = $("task"), timerEl = $("timer"), startBtn = $("start");
+  const pauseBtn = $("pause"), saveBtn = $("save"), statusEl = $("status");
+  const logEl = $("log"), totalEl = $("total"), toastEl = $("toast");
+
+  let state = load();
+  let running = false;
+  let startedAt = 0;
+  let baseSeconds = 0;
+  let raf = 0;
+  let activeSource = "new"; // "new" or an existing row id
+  let toastTimer = 0;
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      const data = raw ? JSON.parse(raw) : null;
+      if(data && Array.isArray(data.entries)) return data;
+    }catch(e){}
+    return {entries:[]};
+  }
+  function persist(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+  function fmt(seconds){
+    seconds = Math.max(0, Number(seconds)||0);
+    const hundredths = Math.floor((seconds % 1) * 100);
+    let whole = Math.floor(seconds);
+    const s = whole % 60; whole = Math.floor(whole/60);
+    const m = whole % 60; const h = Math.floor(whole/60);
+    return [h,m,s].map(v=>String(v).padStart(2,"0")).join(":") + "." + String(hundredths).padStart(2,"0");
+  }
+  function fmtShort(seconds){
+    seconds = Math.max(0, Math.round(Number(seconds)||0));
+    let s = seconds % 60, totalM = Math.floor(seconds/60), m = totalM % 60, h = Math.floor(totalM/60);
+    const parts=[];
+    if(h) parts.push(h+"h");
+    if(m || h) parts.push(m+"m");
+    if(!h && !m) parts.push(s+"s");
+    else if(s) parts.push(s+"s");
+    return parts.join(" ");
+  }
+  function currentSeconds(){
+    if(!running) return baseSeconds;
+    return baseSeconds + (Date.now() - startedAt) / 1000;
+  }
+  function renderTimer(){
+    timerEl.textContent = fmt(currentSeconds());
+    if(running) raf = requestAnimationFrame(renderTimer);
+  }
+  function cancelFrame(){ if(raf) cancelAnimationFrame(raf); raf=0; }
+
+  function setStatus(text=""){ statusEl.textContent=text; }
+
+  function startNew(){
+    const name = taskInput.value.trim();
+    if(!name){ taskInput.focus(); setStatus("Enter a task name first."); return; }
+    activeSource = "new";
+    baseSeconds = 0;
+    startedAt = Date.now();
+    running = true;
+    setStatus("");
+    updateButtons(); cancelFrame(); renderTimer();
+  }
+
+  function resume(){
+    if(running) return;
+    startedAt = Date.now();
+    running = true;
+    setStatus("");
+    updateButtons(); cancelFrame(); renderTimer();
+  }
+
+  function pause(){
+    if(!running) return;
+    baseSeconds = currentSeconds();
+    running = false;
+    cancelFrame(); renderTimer(); updateButtons();
+  }
+
+  function save(){
+    const name = taskInput.value.trim();
+    const seconds = currentSeconds();
+    if(!name){ taskInput.focus(); setStatus("Enter a task name first."); return; }
+    if(seconds <= 0){ setStatus("Track some time before saving."); return; }
+
+    if(activeSource === "existing"){
+      const id = taskInput.dataset.entryId;
+      const entry = state.entries.find(x => x.id === id);
+      if(entry) entry.seconds = seconds;
+    } else {
+      state.entries.push({id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()), name, seconds});
+    }
+    persist();
+    running = false; cancelFrame(); baseSeconds = 0; activeSource = "new";
+    taskInput.value = "";
+    delete taskInput.dataset.entryId;
+    render();
+    updateButtons();
+    setStatus("Saved.");
+  }
+
+  function edit(id){
+    const entry = state.entries.find(x=>x.id===id);
+    if(!entry) return;
+    const row = logEl.querySelector(`[data-id="${CSS.escape(id)}"]`);
+    const nameBox = row.querySelector(".name");
+    nameBox.innerHTML = "";
+    const input = document.createElement("input");
+    input.value = entry.name; input.maxLength=120; input.setAttribute("aria-label","Task name");
+    nameBox.appendChild(input); input.focus(); input.select();
+    const commit = () => {
+      const name = input.value.trim();
+      if(name) entry.name=name;
+      persist(); render();
+    };
+    input.addEventListener("keydown", e => { if(e.key==="Enter") commit(); if(e.key==="Escape") render(); });
+    input.addEventListener("blur", commit, {once:true});
+  }
+
+  function continueEntry(id){
+    if(running){ setStatus("Pause the current timer first."); return; }
+    const entry = state.entries.find(x=>x.id===id);
+    if(!entry) return;
+    taskInput.value = entry.name;
+    taskInput.dataset.entryId = id;
+    activeSource = "existing";
+    baseSeconds = entry.seconds;
+    startedAt = Date.now();
+    running = true;
+    setStatus("");
+    updateButtons(); cancelFrame(); renderTimer();
+  }
+
+  function resetEntry(id){
+    const entry = state.entries.find(x=>x.id===id);
+    if(!entry) return;
+    if(!confirm(`Reset "${entry.name}" to 00:00:00.00?`)) return;
+    entry.seconds=0; persist(); render();
+  }
+
+  function deleteEntry(id){
+    const entry = state.entries.find(x=>x.id===id);
+    if(!entry) return;
+    if(!confirm(`Delete "${entry.name}" from the log?`)) return;
+    state.entries = state.entries.filter(x=>x.id!==id);
+    persist(); render();
+  }
+
+  function render(){
+    logEl.innerHTML="";
+    if(!state.entries.length){
+      const e=document.createElement("div"); e.className="empty"; e.textContent="No saved tasks yet."; logEl.appendChild(e);
+    } else {
+      state.entries.forEach(entry=>{
+        const row=document.createElement("div"); row.className="row"; row.dataset.id=entry.id;
+        const name=document.createElement("div"); name.className="name";
+        const text=document.createElement("div"); text.className="name-text"; text.textContent=entry.name; name.appendChild(text);
+        const dur=document.createElement("div"); dur.className="duration"; dur.textContent=fmtShort(entry.seconds);
+        const acts=document.createElement("div"); acts.className="row-actions";
+        const editBtn=button("✎","Edit name"); editBtn.onclick=()=>edit(entry.id);
+        const contBtn=button("▶","Continue"); contBtn.onclick=()=>continueEntry(entry.id);
+        const resetBtn=button("↻","Reset to zero"); resetBtn.onclick=()=>resetEntry(entry.id);
+        const delBtn=button("×","Delete"); delBtn.onclick=()=>deleteEntry(entry.id);
+        [editBtn,contBtn,resetBtn,delBtn].forEach(b=>acts.appendChild(b));
+        row.append(name,dur,acts); logEl.appendChild(row);
+      });
+    }
+    const total=state.entries.reduce((a,e)=>a+e.seconds,0);
+    totalEl.textContent=fmt(total);
+  }
+
+  function button(label,title){
+    const b=document.createElement("button"); b.type="button"; b.textContent=label; b.title=title; b.setAttribute("aria-label",title); return b;
+  }
+
+  function updateButtons(){
+    startBtn.style.display = running ? "none" : "inline-block";
+    pauseBtn.style.display = running || baseSeconds>0 ? "inline-block" : "none";
+    pauseBtn.textContent = running ? "⏸ Pause" : "▶ Resume";
+    saveBtn.disabled = currentSeconds() <= 0 || !taskInput.value.trim();
+    startBtn.disabled = running;
+    taskInput.disabled = running;
+  }
+
+  async function copy(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      toast("Copied to clipboard.");
+    }catch(e){
+      const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); ta.remove(); toast("Copied to clipboard.");
+    }
+  }
+  function copyLog(){
+    if(!state.entries.length) return toast("Nothing to copy.");
+    const lines=["Time Tracking","",...state.entries.map(e=>`${e.name}: ${fmtShort(e.seconds)}`),"",`Total: ${fmtShort(state.entries.reduce((a,e)=>a+e.seconds,0))}`];
+    copy(lines.join("\n"));
+  }
+  function copyTable(){
+    if(!state.entries.length) return toast("Nothing to copy.");
+    const lines=["Task\tTime",...state.entries.map(e=>`${e.name}\t${fmtShort(e.seconds)}`),`Total\t${fmtShort(state.entries.reduce((a,e)=>a+e.seconds,0))}`];
+    copy(lines.join("\n"));
+  }
+  function clearLog(){
+    if(!state.entries.length) return;
+    if(!confirm("Clear the entire work log? Copy it to Notion first if you need it.")) return;
+    state.entries=[]; persist(); render(); toast("Work log cleared.");
+  }
+  function toast(msg){
+    clearTimeout(toastTimer); toastEl.textContent=msg; toastEl.classList.add("show");
+    toastTimer=setTimeout(()=>toastEl.classList.remove("show"),1600);
+  }
+
+  startBtn.onclick=startNew;
+  pauseBtn.onclick=()=> running ? pause() : resume();
+  saveBtn.onclick=save;
+  $("copyLog").onclick=copyLog;
+  $("copyTable").onclick=copyTable;
+  $("clear").onclick=clearLog;
+  taskInput.addEventListener("input", updateButtons);
+
+  renderTimer(); render(); updateButtons();
+})();
+</script>
+</body>
+</html>
