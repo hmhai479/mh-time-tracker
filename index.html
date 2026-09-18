@@ -69,6 +69,12 @@ button:disabled{opacity:.42;cursor:not-allowed}
 .row-actions button{width:29px;height:29px;padding:0;border:1px solid var(--border);background:var(--button);color:var(--text);border-radius:7px;cursor:pointer}
 .row-actions button:hover{background:var(--button-hover)}
 .row-actions button.delete:hover{color:var(--danger);border-color:var(--danger)}
+.row.running{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
+.row.running .name-text{font-weight:600;color:var(--text)}
+.row.running .duration{color:var(--accent);font-weight:700}
+.row-actions button.is-running{color:var(--accent);border-color:var(--accent);background:var(--accent-bg)}
+:root{--accent-bg:#dcfce7}
+:root.dark{--accent-bg:#12351f}
 .total{display:flex;justify-content:space-between;margin-top:8px;color:var(--muted);font-size:12px}
 .total strong{color:var(--text);font-variant-numeric:tabular-nums;font-family:"SFMono-Regular",Consolas,monospace}
 .bottom{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px}
@@ -376,7 +382,6 @@ button:disabled{opacity:.42;cursor:not-allowed}
   function deleteEntry(id){
     const entry = state.entries.find(x => x.id === id);
     if(!entry) return;
-    if(!confirm('Delete "' + entry.name + '" from the log?')) return;
     if(activeEntryId === id){
       running = false; startedAt = 0; baseSeconds = 0; activeSource = "new"; activeEntryId = ""; taskInput.value = ""; stopFrame();
     }
@@ -411,7 +416,8 @@ button:disabled{opacity:.42;cursor:not-allowed}
     }else{
       state.entries.forEach(entry => {
         const row = document.createElement("div");
-        row.className = "row";
+        const isRunningEntry = running && activeSource === "existing" && activeEntryId === entry.id;
+        row.className = "row" + (isRunningEntry ? " running" : "");
         row.dataset.id = entry.id;
 
         const name = document.createElement("div");
@@ -430,8 +436,12 @@ button:disabled{opacity:.42;cursor:not-allowed}
 
         const editBtn = makeButton("✎","Edit task name");
         editBtn.addEventListener("click", () => edit(entry.id));
-        const contBtn = makeButton("▶","Continue task");
-        contBtn.addEventListener("click", () => continueEntry(entry.id));
+        const contBtn = makeButton(isRunningEntry ? "●" : "▶", isRunningEntry ? "Currently running" : "Continue task", isRunningEntry ? "is-running" : "");
+        if(isRunningEntry){
+          contBtn.disabled = true;
+        }else{
+          contBtn.addEventListener("click", () => continueEntry(entry.id));
+        }
         const resetBtn = makeButton("↻","Reset task to zero");
         resetBtn.addEventListener("click", () => resetEntry(entry.id));
         const delBtn = makeButton("×","Delete task","delete");
@@ -481,16 +491,20 @@ button:disabled{opacity:.42;cursor:not-allowed}
 
   function copyTable(){
     if(!state.entries.length){ toast("Nothing to copy."); return; }
-    const lines = ["Task\tTime",...state.entries.map(e => e.name + "\t" + fmtShort(e.seconds)),"Total\t" + fmtShort(state.entries.reduce((a,e)=>a+e.seconds,0))];
+    const lines = ["Task - Time",...state.entries.map(e => "- " + e.name + " - " + fmtShort(e.seconds)),"Total - " + fmtShort(state.entries.reduce((a,e)=>a+e.seconds,0))];
     copyText(lines.join("\n"));
   }
 
   function clearLog(){
     if(!state.entries.length){ toast("Work log is already empty."); return; }
-    if(!confirm("Clear the entire work log? Copy it to Notion first if you need it.")) return;
+    if(activeEntryId){
+      running = false; startedAt = 0; baseSeconds = 0; activeSource = "new"; activeEntryId = ""; taskInput.value = ""; stopFrame();
+    }
     state.entries = [];
     persist();
     render();
+    renderTimer();
+    updateButtons();
     toast("Work log cleared.");
   }
 
