@@ -2,79 +2,56 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MH Time Tracker v4</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MH Time Tracker</title>
 <style>
 :root{
-  --bg:#f7f7f7;
-  --card:#ffffff;
-  --input:#f3f4f6;
-  --text:#171717;
-  --muted:#737373;
-  --border:#d4d4d4;
-  --timer:#171717;
-  --accent:#16a34a;
-  --accent-hover:#15803d;
-  --danger:#dc2626;
-  --button:#ffffff;
-  --button-hover:#f0f0f0;
-  --shadow:0 1px 2px rgba(0,0,0,.06);
+  --bg:#f6f6f6;--card:#fff;--input:#f0f0f0;--text:#171717;--muted:#737373;
+  --border:#d4d4d4;--timer:#171717;--accent:#16a34a;--accent-hover:#15803d;
+  --button:#fff;--button-hover:#ededed;--accent-bg:#dcfce7;--danger:#dc2626;
 }
 :root.dark{
-  --bg:#151515;
-  --card:#202020;
-  --input:#181818;
-  --text:#f5f5f5;
-  --muted:#a3a3a3;
-  --border:#3a3a3a;
-  --timer:#ffffff;
-  --accent:#22c55e;
-  --accent-hover:#16a34a;
-  --danger:#ef4444;
-  --button:#242424;
-  --button-hover:#2e2e2e;
-  --shadow:0 1px 2px rgba(0,0,0,.2);
+  --bg:#151515;--card:#202020;--input:#181818;--text:#f5f5f5;--muted:#a3a3a3;
+  --border:#3a3a3a;--timer:#fff;--accent:#22c55e;--accent-hover:#16a34a;
+  --button:#242424;--button-hover:#2e2e2e;--accent-bg:#12351f;--danger:#ef4444;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 body{min-height:100%}
 button,input{font:inherit}
-.app{width:100%;max-width:760px;margin:0 auto;padding:12px 14px 14px;background:var(--bg)}
-.topbar{display:flex;justify-content:flex-end;align-items:center;height:28px;margin-bottom:2px}
+.app{width:100%;max-width:760px;margin:0 auto;padding:10px 14px 14px;background:var(--bg)}
+.topbar{display:flex;justify-content:flex-end;height:28px;margin-bottom:2px}
 .theme-btn{width:34px;height:30px;padding:0;border:1px solid var(--border);background:var(--button);color:var(--text);border-radius:8px;cursor:pointer;line-height:1}
 .theme-btn:hover{background:var(--button-hover)}
-.task-wrap{margin-bottom:4px}
 label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
 input[type=text]{width:100%;border:1px solid var(--border);background:var(--input);color:var(--text);border-radius:9px;padding:10px 12px;font-size:15px;outline:none;transition:border-color .12s,background .12s}
 input[type=text]:focus{border-color:var(--accent)}
 input[type=text]:disabled{opacity:.9}
-.timer{display:flex;justify-content:center;align-items:baseline;color:var(--timer);font-variant-numeric:tabular-nums;font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:clamp(40px,8vw,68px);font-weight:600;letter-spacing:-3px;line-height:1;margin:17px 0 16px;min-height:68px}
+.timer{display:flex;justify-content:center;align-items:baseline;color:var(--timer);font-variant-numeric:tabular-nums;font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:clamp(40px,8vw,68px);font-weight:600;letter-spacing:-3px;line-height:1;margin:17px 0 15px;min-height:68px}
 .actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
 button.action{border:1px solid var(--border);background:var(--button);color:var(--text);border-radius:9px;padding:10px 15px;font-size:14px;cursor:pointer;min-height:40px}
 button.action:hover{background:var(--button-hover)}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 button.primary:hover{background:var(--accent-hover)}
 button:disabled{opacity:.42;cursor:not-allowed}
-.status{text-align:center;color:var(--muted);font-size:12px;min-height:17px;margin:7px 0 10px}
+.status{text-align:center;color:var(--muted);font-size:12px;min-height:15px;margin:6px 0 8px}
 .section{border-top:1px solid var(--border);padding-top:11px;margin-top:5px}
-.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
-.section-title{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
+.section-title{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
 .log{display:flex;flex-direction:column;gap:5px}
-.row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 8px;box-shadow:var(--shadow)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 8px;transition:border-color .12s,background .12s,box-shadow .12s}
+.row.running{border:2px solid var(--accent);padding:6px 7px;background:var(--accent-bg);box-shadow:0 0 0 2px rgba(34,197,94,.13)}
 .name{min-width:0}
 .name input{padding:6px 8px;font-size:14px}
 .name-text{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.running .name-text{font-weight:700}
 .duration{font-variant-numeric:tabular-nums;font-family:"SFMono-Regular",Consolas,monospace;color:var(--text);font-size:12px;white-space:nowrap}
+.row.running .duration{color:var(--accent);font-weight:800}
+.row.running .duration::before{content:"● ";font-size:8px}
 .row-actions{display:flex;gap:4px}
 .row-actions button{width:29px;height:29px;padding:0;border:1px solid var(--border);background:var(--button);color:var(--text);border-radius:7px;cursor:pointer}
 .row-actions button:hover{background:var(--button-hover)}
-.row-actions button.delete:hover{color:var(--danger);border-color:var(--danger)}
-.row.running{border:2px solid var(--accent);box-shadow:0 0 0 2px var(--accent-bg),0 0 0 4px rgba(34,197,94,.18),var(--shadow);background:var(--accent-bg)}
-.row.running .name-text{font-weight:700;color:var(--text)}
-.row.running .duration{color:var(--accent);font-weight:800}.row.running .duration::before{content:"● ";font-size:9px}
 .row-actions button.is-running{color:#fff;background:var(--accent);border-color:var(--accent);font-weight:800;box-shadow:0 0 0 2px var(--accent-bg)}
-:root{--accent-bg:#dcfce7}
-:root.dark{--accent-bg:#12351f}
+.row-actions button.delete:hover{color:var(--danger);border-color:var(--danger)}
 .total{display:flex;justify-content:space-between;margin-top:8px;color:var(--muted);font-size:12px}
 .total strong{color:var(--text);font-variant-numeric:tabular-nums;font-family:"SFMono-Regular",Consolas,monospace}
 .bottom{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px}
@@ -84,37 +61,25 @@ button:disabled{opacity:.42;cursor:not-allowed}
 .toast{position:fixed;left:50%;bottom:15px;transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:8px;padding:7px 11px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:10}
 .toast.show{opacity:1}
 @media(max-width:430px){
-  .app{padding:9px 10px 12px}
-  .timer{font-size:42px;letter-spacing:-2px;min-height:50px;margin:14px 0}
-  .row{grid-template-columns:minmax(0,1fr) auto}
-  .duration{justify-self:end}
-  .row-actions{grid-column:1/-1;justify-content:flex-end}
+ .app{padding:9px 10px 12px}.timer{font-size:42px;letter-spacing:-2px;min-height:50px;margin:14px 0}.row{grid-template-columns:minmax(0,1fr) auto}.duration{justify-self:end}.row-actions{grid-column:1/-1;justify-content:flex-end}
 }
-@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <main class="app" id="tracker">
-  <div class="topbar">
-    <button class="theme-btn" id="theme" type="button" title="Toggle light/dark mode" aria-label="Toggle light/dark mode">☾</button>
-  </div>
-
-  <div class="task-wrap">
-    <label for="task">Task</label>
-    <input id="task" type="text" maxlength="120" placeholder="e.g. Rigging" autocomplete="off">
-  </div>
-
-  <div class="timer" id="timer" aria-live="off">00:00:00.00</div>
-
+  <div class="topbar"><button class="theme-btn" id="theme" type="button" aria-label="Switch to dark mode">☾</button></div>
+  <label for="task">Task</label>
+  <input id="task" type="text" maxlength="120" placeholder="e.g. Rigging" autocomplete="off">
+  <div class="timer" id="timer">00:00:00.00</div>
   <div class="actions">
     <button id="start" class="action primary" type="button">▶ Start</button>
     <button id="pause" class="action" type="button" hidden>⏸ Pause</button>
     <button id="save" class="action" type="button" disabled>Save session</button>
   </div>
   <div class="status" id="status" aria-live="polite"></div>
-
   <section class="section">
-    <div class="section-head"><div class="section-title">WORK LOG</div></div>
+    <div class="section-title">WORK LOG</div>
     <div class="log" id="log"></div>
     <div class="total"><span>TOTAL</span><strong id="total">00:00:00.00</strong></div>
     <div class="bottom">
@@ -125,444 +90,142 @@ button:disabled{opacity:.42;cursor:not-allowed}
   </section>
 </main>
 <div class="toast" id="toast"></div>
-
 <script>
-(() => {
-  "use strict";
+(()=>{
+ "use strict";
+ const KEY="mh-time-tracker-v5", OLD_KEYS=["mh-time-tracker-v4","mh-time-tracker-v3","mh-time-tracker-v2","mh-time-tracker-v1"];
+ const $=id=>document.getElementById(id);
+ const taskInput=$("task"),timerEl=$("timer"),startBtn=$("start"),pauseBtn=$("pause"),saveBtn=$("save"),statusEl=$("status"),logEl=$("log"),totalEl=$("total"),toastEl=$("toast"),themeBtn=$("theme");
+ let state=loadState();
+ let running=Boolean(state.active?.running);
+ let startedAt=Number(state.active?.startedAt)||0;
+ let baseSeconds=Number(state.active?.baseSeconds)||0;
+ let activeSource=state.active?.source==="existing"?"existing":"new";
+ let activeEntryId=state.active?.entryId||"";
+ let raf=0,toastTimer=0,theme=loadTheme();
 
-  const KEY = "mh-time-tracker-v2";
-  const OLD_KEY = "mh-time-tracker-v1";
-  const $ = id => document.getElementById(id);
+ function normalize(data){
+   if(!data||!Array.isArray(data.entries)) return null;
+   return {entries:data.entries.map(e=>({id:String(e.id||makeId()),name:String(e.name||"Untitled"),seconds:Math.max(0,Number(e.seconds)||0)})),active:data.active||null};
+ }
+ function loadState(){
+   try{
+     let raw=localStorage.getItem(KEY); if(raw){const d=normalize(JSON.parse(raw));if(d)return d;}
+     for(const k of OLD_KEYS){raw=localStorage.getItem(k);if(raw){const d=normalize(JSON.parse(raw));if(d)return d;}}
+   }catch(e){}
+   return {entries:[],active:null};
+ }
+ function persist(){try{localStorage.setItem(KEY,JSON.stringify({entries:state.entries,active:(running||baseSeconds>0||activeEntryId)?{running,startedAt,baseSeconds,source:activeSource,entryId:activeEntryId}:null}));}catch(e){}}
+ function loadTheme(){try{const s=localStorage.getItem("mh-time-tracker-theme");if(s==="dark"||s==="light")return s;}catch(e){}return "light";}
+ function applyTheme(){document.documentElement.classList.toggle("dark",theme==="dark");themeBtn.textContent=theme==="dark"?"☀":"☾";themeBtn.setAttribute("aria-label",theme==="dark"?"Switch to light mode":"Switch to dark mode");try{localStorage.setItem("mh-time-tracker-theme",theme);}catch(e){}}
+ function fmt(seconds){seconds=Math.max(0,Number(seconds)||0);let hh=Math.floor((seconds%1)*100);let w=Math.floor(seconds),s=w%60;w=Math.floor(w/60);let m=w%60,h=Math.floor(w/60);return [h,m,s].map(v=>String(v).padStart(2,"0")).join(":")+"."+String(hh).padStart(2,"0");}
+ function fmtShort(seconds){seconds=Math.max(0,Math.round(Number(seconds)||0));let s=seconds%60,tm=Math.floor(seconds/60),m=tm%60,h=Math.floor(tm/60),p=[];if(h)p.push(h+"h");if(m||h)p.push(m+"m");if(!h&&!m)p.push(s+"s");else if(s)p.push(s+"s");return p.join(" ");}
+ function currentSeconds(){return running?Math.max(0,baseSeconds+(Date.now()-startedAt)/1000):Math.max(0,baseSeconds);}
+ function stopFrame(){if(raf){cancelAnimationFrame(raf);raf=0;}}
+ function setStatus(t=""){statusEl.textContent=t;}
+ function renderTimer(){timerEl.textContent=fmt(currentSeconds());if(running)raf=requestAnimationFrame(renderTimer);}
 
-  const taskInput = $("task");
-  const timerEl = $("timer");
-  const startBtn = $("start");
-  const pauseBtn = $("pause");
-  const saveBtn = $("save");
-  const statusEl = $("status");
-  const logEl = $("log");
-  const totalEl = $("total");
-  const toastEl = $("toast");
-  const themeBtn = $("theme");
+ function startNew(){
+   const name=taskInput.value.trim();if(!name){setStatus("Enter a task name first.");taskInput.focus();return;}
+   activeSource="new";activeEntryId="";baseSeconds=0;startedAt=Date.now();running=true;setStatus("");persist();updateButtons();render();stopFrame();renderTimer();
+ }
+ function pauseOrResume(){
+   if(running){baseSeconds=currentSeconds();running=false;startedAt=0;stopFrame();persist();updateButtons();render();renderTimer();}
+   else if(baseSeconds>0){startedAt=Date.now();running=true;persist();updateButtons();render();stopFrame();renderTimer();}
+ }
+ function save(){
+   const name=taskInput.value.trim(),seconds=currentSeconds();
+   if(!name){setStatus("Enter a task name first.");taskInput.focus();return;}
+   if(seconds<=0){setStatus("Track some time before saving.");return;}
+   if(activeSource==="existing"&&activeEntryId){const e=state.entries.find(x=>x.id===activeEntryId);if(e){e.name=name;e.seconds=seconds;}else state.entries.push({id:makeId(),name,seconds});}
+   else state.entries.push({id:makeId(),name,seconds});
+   running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";taskInput.value="";stopFrame();persist();render();updateButtons();renderTimer();setStatus("Saved.");
+ }
+ function edit(id){
+   if(running)return;
+   const e=state.entries.find(x=>x.id===id),row=logEl.querySelector('[data-id="'+CSS.escape(id)+'"]');if(!e||!row)return;
+   const box=row.querySelector(".name");box.innerHTML="";const input=document.createElement("input");input.type="text";input.maxLength=120;input.value=e.name;input.setAttribute("aria-label","Task name");box.appendChild(input);input.focus();input.select();
+   let done=false;const commit=()=>{if(done)return;done=true;const n=input.value.trim();if(n)e.name=n;persist();render();};input.addEventListener("keydown",ev=>{if(ev.key==="Enter")commit();else if(ev.key==="Escape"){done=true;render();}});input.addEventListener("blur",commit);
+ }
+ function continueEntry(id){
+   if(running)return;
+   const e=state.entries.find(x=>x.id===id);if(!e)return;
+   taskInput.value=e.name;activeSource="existing";activeEntryId=id;baseSeconds=Math.max(0,Number(e.seconds)||0);startedAt=Date.now();running=true;setStatus("");persist();updateButtons();render();stopFrame();renderTimer();
+ }
+ function resetEntry(id){
+   const e=state.entries.find(x=>x.id===id);if(!e)return;
+   e.seconds=0;
+   if(activeSource==="existing"&&activeEntryId===id){running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";taskInput.value="";stopFrame();}
+   persist();render();renderTimer();updateButtons();
+ }
+ function deleteEntry(id){
+   state.entries=state.entries.filter(e=>e.id!==id);
+   if(activeSource==="existing"&&activeEntryId===id){running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";taskInput.value="";stopFrame();}
+   persist();render();renderTimer();updateButtons();
+ }
+ function makeId(){try{return crypto.randomUUID();}catch(e){return Date.now().toString(36)+Math.random().toString(36).slice(2);}}
+ function btn(label,title,cls=""){const b=document.createElement("button");b.type="button";b.textContent=label;b.title=title;b.setAttribute("aria-label",title);if(cls)b.className=cls;return b;}
+ function render(){
+   logEl.innerHTML="";
+   if(!state.entries.length){const x=document.createElement("div");x.className="empty";x.textContent="No saved tasks yet.";logEl.appendChild(x);}
+   else state.entries.forEach(e=>{
+     const row=document.createElement("div"),isActive=running&&activeSource==="existing"&&activeEntryId===e.id;
+     row.className="row"+(isActive?" running":"");row.dataset.id=e.id;
+     const name=document.createElement("div");name.className="name";const nt=document.createElement("div");nt.className="name-text";nt.textContent=e.name;name.appendChild(nt);
+     const dur=document.createElement("div");dur.className="duration";dur.textContent=fmtShort(isActive?currentSeconds():e.seconds);
+     const actions=document.createElement("div");actions.className="row-actions";
+     const eb=btn("✎","Edit task name");eb.addEventListener("click",()=>edit(e.id));
+     const cb=btn(isActive?"●":"▶",isActive?"Currently running":"Continue task",isActive?"is-running":"");
+     if(isActive)cb.disabled=true;else cb.addEventListener("click",()=>continueEntry(e.id));
+     const rb=btn("↻","Reset task to zero");rb.addEventListener("click",()=>resetEntry(e.id));
+     const db=btn("×","Delete task","delete");db.addEventListener("click",()=>deleteEntry(e.id));
+     actions.append(eb,cb,rb,db);row.append(name,dur,actions);logEl.appendChild(row);
+   });
+   const total=state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
+   totalEl.textContent=fmt(total);
+ }
+ function refreshActiveRow(){
+   if(!running||activeSource!=="existing"||!activeEntryId)return;
+   const row=logEl.querySelector('[data-id="'+CSS.escape(activeEntryId)+'"]');if(!row)return;
+   row.classList.add("running");const d=row.querySelector(".duration");if(d)d.textContent=fmtShort(currentSeconds());
+ }
+ function updateButtons(){
+   startBtn.hidden=running||baseSeconds>0;
+   pauseBtn.hidden=!(running||baseSeconds>0);
+   pauseBtn.textContent=running?"⏸ Pause":"▶ Resume";
+   saveBtn.disabled=currentSeconds()<=0||!taskInput.value.trim();
+   taskInput.disabled=running;
+ }
+ function animationLoop(){
+   if(!running)return;
+   timerEl.textContent=fmt(currentSeconds());
+   refreshActiveRow();
+   raf=requestAnimationFrame(animationLoop);
+ }
+ function beginAnimation(){stopFrame();if(running)raf=requestAnimationFrame(animationLoop);else renderTimer();}
+ async function copyText(text){
+   try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(text);else{const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();}toast("Copied to clipboard.");}catch(e){toast("Copy failed.");}
+ }
+ function copyLog(){
+   if(!state.entries.length){toast("Nothing to copy.");return;}
+   const total=state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
+   copyText(["⏱ Time Tracking","",...state.entries.map(e=>"- "+e.name+": "+fmtShort(e.seconds)),"","⏱ Total: "+fmtShort(total)].join("\n"));
+ }
+ function copyTable(){
+   if(!state.entries.length){toast("Nothing to copy.");return;}
+   const total=state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
+   const lines=["Task | Time","--- | ---",...state.entries.map(e=>e.name+" | "+fmtShort(e.seconds)),"","**Total** | **"+fmtShort(total)+"**"];
+   copyText(lines.join("\n"));
+ }
+ function clearLog(){
+   state.entries=[];running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";taskInput.value="";stopFrame();persist();render();renderTimer();updateButtons();
+ }
+ function toast(msg){clearTimeout(toastTimer);toastEl.textContent=msg;toastEl.classList.add("show");toastTimer=setTimeout(()=>toastEl.classList.remove("show"),1400);}
 
-  let state = loadState();
-  let running = Boolean(state.active?.running);
-  let startedAt = Number(state.active?.startedAt) || 0;
-  let baseSeconds = Number(state.active?.baseSeconds) || 0;
-  let activeSource = state.active?.source === "existing" ? "existing" : "new";
-  let activeEntryId = state.active?.entryId || "";
-  let raf = 0;
-  let toastTimer = 0;
-  let theme = loadTheme();
-
-  function loadState(){
-    try{
-      const raw = localStorage.getItem(KEY);
-      if(raw){
-        const data = JSON.parse(raw);
-        if(data && Array.isArray(data.entries)) return data;
-      }
-      const oldRaw = localStorage.getItem(OLD_KEY);
-      if(oldRaw){
-        const old = JSON.parse(oldRaw);
-        if(old && Array.isArray(old.entries)) return {entries:old.entries,active:null};
-      }
-    }catch(e){}
-    return {entries:[],active:null};
-  }
-
-  function persist(){
-    try{
-      localStorage.setItem(KEY, JSON.stringify({
-        entries: state.entries,
-        active: running || baseSeconds > 0 || activeEntryId ? {
-          running,
-          startedAt,
-          baseSeconds,
-          source: activeSource,
-          entryId: activeEntryId
-        } : null
-      }));
-    }catch(e){}
-  }
-
-  function loadTheme(){
-    try{
-      const saved = localStorage.getItem("mh-time-tracker-theme");
-      if(saved === "dark" || saved === "light") return saved;
-    }catch(e){}
-    return "light";
-  }
-
-  function applyTheme(){
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    themeBtn.textContent = theme === "dark" ? "☀" : "☾";
-    themeBtn.title = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
-    themeBtn.setAttribute("aria-label", themeBtn.title);
-    try{ localStorage.setItem("mh-time-tracker-theme", theme); }catch(e){}
-  }
-
-  function fmt(seconds){
-    seconds = Math.max(0, Number(seconds) || 0);
-    const hundredths = Math.floor((seconds % 1) * 100);
-    let whole = Math.floor(seconds);
-    const s = whole % 60;
-    whole = Math.floor(whole / 60);
-    const m = whole % 60;
-    const h = Math.floor(whole / 60);
-    return [h,m,s].map(v => String(v).padStart(2,"0")).join(":") + "." + String(hundredths).padStart(2,"0");
-  }
-
-  function fmtShort(seconds){
-    seconds = Math.max(0, Math.round(Number(seconds) || 0));
-    const s = seconds % 60;
-    const totalM = Math.floor(seconds / 60);
-    const m = totalM % 60;
-    const h = Math.floor(totalM / 60);
-    const parts = [];
-    if(h) parts.push(h + "h");
-    if(m || h) parts.push(m + "m");
-    if(!h && !m) parts.push(s + "s");
-    else if(s) parts.push(s + "s");
-    return parts.join(" ");
-  }
-
-  function currentSeconds(){
-    if(!running) return baseSeconds;
-    return Math.max(0, baseSeconds + (Date.now() - startedAt) / 1000);
-  }
-
-  function renderTimer(){
-    timerEl.textContent = fmt(currentSeconds());
-    if(running) raf = requestAnimationFrame(renderTimer);
-  }
-
-  function stopFrame(){
-    if(raf){ cancelAnimationFrame(raf); raf = 0; }
-  }
-
-  function setStatus(text=""){
-    statusEl.textContent = text;
-  }
-
-  function startNew(){
-    const name = taskInput.value.trim();
-    if(!name){ setStatus("Enter a task name first."); taskInput.focus(); return; }
-    activeSource = "new";
-    activeEntryId = "";
-    baseSeconds = 0;
-    startedAt = Date.now();
-    running = true;
-    setStatus("");
-    persist();
-    updateButtons();
-    stopFrame();
-    renderTimer();
-  }
-
-  function pauseOrResume(){
-    if(running){
-      baseSeconds = currentSeconds();
-      running = false;
-      stopFrame();
-      persist();
-      setStatus("");
-      renderTimer();
-      updateButtons();
-    }else{
-      if(baseSeconds <= 0){ startNew(); return; }
-      startedAt = Date.now();
-      running = true;
-      persist();
-      setStatus("");
-      updateButtons();
-      stopFrame();
-      renderTimer();
-    }
-  }
-
-  function save(){
-    const name = taskInput.value.trim();
-    const seconds = currentSeconds();
-    if(!name){ setStatus("Enter a task name first."); taskInput.focus(); return; }
-    if(seconds <= 0){ setStatus("Track some time before saving."); return; }
-
-    if(activeSource === "existing" && activeEntryId){
-      const entry = state.entries.find(x => x.id === activeEntryId);
-      if(entry){ entry.name = name; entry.seconds = seconds; }
-      else state.entries.push({id:makeId(),name,seconds});
-    }else{
-      state.entries.push({id:makeId(),name,seconds});
-    }
-
-    running = false;
-    startedAt = 0;
-    baseSeconds = 0;
-    activeSource = "new";
-    activeEntryId = "";
-    taskInput.value = "";
-    stopFrame();
-    persist();
-    render();
-    updateButtons();
-    renderTimer();
-    setStatus("Saved.");
-  }
-
-  function edit(id){
-    if(running){ setStatus("Pause the current timer before editing a saved task."); return; }
-    const entry = state.entries.find(x => x.id === id);
-    if(!entry) return;
-    const row = logEl.querySelector('[data-id="' + CSS.escape(id) + '"]');
-    if(!row) return;
-    const nameBox = row.querySelector(".name");
-    nameBox.innerHTML = "";
-    const input = document.createElement("input");
-    input.type = "text";
-    input.maxLength = 120;
-    input.value = entry.name;
-    input.setAttribute("aria-label","Task name");
-    nameBox.appendChild(input);
-    input.focus();
-    input.select();
-    let done = false;
-    const commit = () => {
-      if(done) return;
-      done = true;
-      const name = input.value.trim();
-      if(name) entry.name = name;
-      persist();
-      render();
-    };
-    input.addEventListener("keydown", e => {
-      if(e.key === "Enter") commit();
-      if(e.key === "Escape"){ done = true; render(); }
-    });
-    input.addEventListener("blur", commit);
-  }
-
-  function continueEntry(id){
-    if(running){ setStatus("Pause the current timer first."); return; }
-    const entry = state.entries.find(x => x.id === id);
-    if(!entry) return;
-    taskInput.value = entry.name;
-    activeSource = "existing";
-    activeEntryId = id;
-    baseSeconds = Math.max(0, Number(entry.seconds) || 0);
-    startedAt = Date.now();
-    running = true;
-    setStatus("");
-    persist();
-    updateButtons();
-    stopFrame();
-    renderTimer();
-  }
-
-  function resetEntry(id){
-    const entry = state.entries.find(x => x.id === id);
-    if(!entry) return;
-    if(activeSource === "existing" && activeEntryId === id){
-      running = false;
-      startedAt = 0;
-      baseSeconds = 0;
-      activeSource = "new";
-      activeEntryId = "";
-      taskInput.value = "";
-      stopFrame();
-      persist();
-      renderTimer();
-      updateButtons();
-    }
-    entry.seconds = 0;
-    persist();
-    render();
-    toast("Reset to 00:00:00.00");
-  }
-
-  function deleteEntry(id){
-    const entry = state.entries.find(x => x.id === id);
-    if(!entry) return;
-    if(activeEntryId === id){
-      running = false; startedAt = 0; baseSeconds = 0; activeSource = "new"; activeEntryId = ""; taskInput.value = ""; stopFrame();
-    }
-    state.entries = state.entries.filter(x => x.id !== id);
-    persist();
-    render();
-    renderTimer();
-    updateButtons();
-  }
-
-  function makeId(){
-    return (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
-  }
-
-  function makeButton(label,title,extraClass=""){
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = label;
-    b.title = title;
-    b.setAttribute("aria-label",title);
-    if(extraClass) b.className = extraClass;
-    return b;
-  }
-
-  function render(){
-    logEl.innerHTML = "";
-    if(!state.entries.length){
-      const empty = document.createElement("div");
-      empty.className = "empty";
-      empty.textContent = "No saved tasks yet.";
-      logEl.appendChild(empty);
-    }else{
-      state.entries.forEach(entry => {
-        const row = document.createElement("div");
-        const isRunningEntry = running && activeSource === "existing" && activeEntryId === entry.id;
-        row.className = "row" + (isRunningEntry ? " running" : "");
-        row.dataset.id = entry.id;
-
-        const name = document.createElement("div");
-        name.className = "name";
-        const nameText = document.createElement("div");
-        nameText.className = "name-text";
-        nameText.textContent = entry.name;
-        name.appendChild(nameText);
-
-        const dur = document.createElement("div");
-        dur.className = "duration";
-        dur.textContent = fmtShort(entry.seconds);
-
-        const actions = document.createElement("div");
-        actions.className = "row-actions";
-
-        const editBtn = makeButton("✎","Edit task name");
-        editBtn.addEventListener("click", () => edit(entry.id));
-        const contBtn = makeButton(isRunningEntry ? "●" : "▶", isRunningEntry ? "Currently running" : "Continue task", isRunningEntry ? "is-running" : "");
-        if(isRunningEntry){
-          contBtn.disabled = true;
-        }else{
-          contBtn.addEventListener("click", () => continueEntry(entry.id));
-        }
-        const resetBtn = makeButton("↻","Reset task to zero");
-        resetBtn.addEventListener("click", () => resetEntry(entry.id));
-        const delBtn = makeButton("×","Delete task","delete");
-        delBtn.addEventListener("click", () => deleteEntry(entry.id));
-
-        [editBtn,contBtn,resetBtn,delBtn].forEach(b => actions.appendChild(b));
-        row.append(name,dur,actions);
-        logEl.appendChild(row);
-      });
-    }
-
-    const total = state.entries.reduce((sum,e) => sum + Math.max(0,Number(e.seconds)||0),0);
-    totalEl.textContent = fmt(total);
-  }
-
-  function updateButtons(){
-    startBtn.hidden = running || baseSeconds > 0;
-    pauseBtn.hidden = !(running || baseSeconds > 0);
-    pauseBtn.textContent = running ? "⏸ Pause" : "▶ Resume";
-    saveBtn.disabled = currentSeconds() <= 0 || !taskInput.value.trim();
-    taskInput.disabled = running;
-  }
-
-  async function copyText(text){
-    try{
-      if(navigator.clipboard && window.isSecureContext){
-        await navigator.clipboard.writeText(text);
-      }else{
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        ta.remove();
-      }
-      toast("Copied to clipboard.");
-    }catch(e){ toast("Copy failed. Select and copy manually."); }
-  }
-
-  function copyLog(){
-    if(!state.entries.length){ toast("Nothing to copy."); return; }
-    const total = state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
-    const lines = ["⏱ Time Tracking","",...state.entries.map(e => "- " + e.name + ": " + fmtShort(e.seconds)),"","⏱ Total: " + fmtShort(total)];
-    copyText(lines.join("\n"));
-  }
-
-  function copyTable(){
-    if(!state.entries.length){ toast("Nothing to copy."); return; }
-    const total = state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
-    const maxName = Math.max(4, ...state.entries.map(e => String(e.name).length), 5);
-    const nameW = Math.min(34, maxName);
-    const fit = name => { const raw = String(name); return raw.length > nameW ? raw.slice(0,nameW-1) + "…" : raw.padEnd(nameW," "); };
-    const timeW = 11;
-    const line = (a,b,c) => a + "─".repeat(nameW+2) + b + "─".repeat(timeW+2) + c;
-    const lines = [
-      "⏱ TIME REPORT",
-      "",
-      "┌─" + "─".repeat(nameW+2) + "┬─" + "─".repeat(timeW+2) + "┐",
-      "│ " + fit("Task") + " │ " + "Time".padEnd(timeW," ") + " │",
-      "├─" + "─".repeat(nameW+2) + "┼─" + "─".repeat(timeW+2) + "┤",
-      ...state.entries.map(e => "│ " + fit(e.name) + " │ " + fmtShort(e.seconds).padEnd(timeW," ") + " │"),
-      "├─" + "─".repeat(nameW+2) + "┼─" + "─".repeat(timeW+2) + "┤",
-      "│ " + fit("TOTAL") + " │ " + fmtShort(total).padEnd(timeW," ") + " │",
-      "└─" + "─".repeat(nameW+2) + "┴─" + "─".repeat(timeW+2) + "┘"
-    ];
-    copyText(lines.join("\n"));
-  }
-
-  function clearLog(){
-    if(!state.entries.length){ toast("Work log is already empty."); return; }
-    if(activeEntryId){
-      running = false; startedAt = 0; baseSeconds = 0; activeSource = "new"; activeEntryId = ""; taskInput.value = ""; stopFrame();
-    }
-    state.entries = [];
-    persist();
-    render();
-    renderTimer();
-    updateButtons();
-    toast("Work log cleared.");
-  }
-
-  function toast(msg){
-    clearTimeout(toastTimer);
-    toastEl.textContent = msg;
-    toastEl.classList.add("show");
-    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1600);
-  }
-
-  startBtn.addEventListener("click", startNew);
-  pauseBtn.addEventListener("click", pauseOrResume);
-  saveBtn.addEventListener("click", save);
-  $("copyLog").addEventListener("click", copyLog);
-  $("copyTable").addEventListener("click", copyTable);
-  $("clear").addEventListener("click", clearLog);
-  taskInput.addEventListener("input", updateButtons);
-  themeBtn.addEventListener("click", () => { theme = theme === "dark" ? "light" : "dark"; applyTheme(); });
-
-  document.addEventListener("visibilitychange", () => {
-    if(document.hidden){
-      if(running){
-        baseSeconds = currentSeconds();
-        startedAt = Date.now();
-        persist();
-      }
-      stopFrame();
-    }else{
-      renderTimer();
-    }
-  });
-
-  window.addEventListener("beforeunload", () => {
-    if(running){ baseSeconds = currentSeconds(); startedAt = Date.now(); }
-    persist();
-  });
-
-  applyTheme();
-  render();
-  renderTimer();
-  updateButtons();
+ startBtn.addEventListener("click",startNew);pauseBtn.addEventListener("click",pauseOrResume);saveBtn.addEventListener("click",save);$("copyLog").addEventListener("click",copyLog);$("copyTable").addEventListener("click",copyTable);$("clear").addEventListener("click",clearLog);taskInput.addEventListener("input",updateButtons);themeBtn.addEventListener("click",()=>{theme=theme==="dark"?"light":"dark";applyTheme();});
+ document.addEventListener("visibilitychange",()=>{if(document.hidden){if(running){baseSeconds=currentSeconds();startedAt=Date.now();persist();}stopFrame();}else{beginAnimation();render();updateButtons();}});
+ window.addEventListener("beforeunload",()=>{if(running){baseSeconds=currentSeconds();startedAt=Date.now();}persist();});
+ applyTheme();render();updateButtons();beginAnimation();
 })();
 </script>
 </body>
