@@ -93,7 +93,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
 <script>
 (()=>{
  "use strict";
- const KEY="mh-time-tracker-v5", OLD_KEYS=["mh-time-tracker-v4","mh-time-tracker-v3","mh-time-tracker-v2","mh-time-tracker-v1"];
+ const KEY="mh-time-tracker-v6", OLD_KEYS=["mh-time-tracker-v4","mh-time-tracker-v3","mh-time-tracker-v2","mh-time-tracker-v1"];
  const $=id=>document.getElementById(id);
  const taskInput=$("task"),timerEl=$("timer"),startBtn=$("start"),pauseBtn=$("pause"),saveBtn=$("save"),statusEl=$("status"),logEl=$("log"),totalEl=$("total"),toastEl=$("toast"),themeBtn=$("theme");
  let state=loadState();
@@ -169,14 +169,17 @@ button:disabled{opacity:.42;cursor:not-allowed}
    logEl.innerHTML="";
    if(!state.entries.length){const x=document.createElement("div");x.className="empty";x.textContent="No saved tasks yet.";logEl.appendChild(x);}
    else state.entries.forEach(e=>{
-     const row=document.createElement("div"),isActive=running&&activeSource==="existing"&&activeEntryId===e.id;
-     row.className="row"+(isActive?" running":"");row.dataset.id=e.id;
+     const row=document.createElement("div"),isSelected=activeSource==="existing"&&activeEntryId===e.id;
+     row.className="row"+(isSelected?" running":"");row.dataset.id=e.id;
      const name=document.createElement("div");name.className="name";const nt=document.createElement("div");nt.className="name-text";nt.textContent=e.name;name.appendChild(nt);
-     const dur=document.createElement("div");dur.className="duration";dur.textContent=fmtShort(isActive?currentSeconds():e.seconds);
+     const dur=document.createElement("div");dur.className="duration";dur.textContent=fmtShort(isSelected?currentSeconds():e.seconds);
      const actions=document.createElement("div");actions.className="row-actions";
      const eb=btn("✎","Edit task name");eb.addEventListener("click",()=>edit(e.id));
-     const cb=btn(isActive?"●":"▶",isActive?"Currently running":"Continue task",isActive?"is-running":"");
-     if(isActive)cb.disabled=true;else cb.addEventListener("click",()=>continueEntry(e.id));
+     const cb=btn(isSelected&&running?"⏸":"▶",isSelected?(running?"Pause task":"Resume task"):"Start task",isSelected&&running?"is-running":"");
+     cb.addEventListener("click",()=>{
+       if(isSelected) pauseOrResume();
+       else continueEntry(e.id);
+     });
      const rb=btn("↻","Reset task to zero");rb.addEventListener("click",()=>resetEntry(e.id));
      const db=btn("×","Delete task","delete");db.addEventListener("click",()=>deleteEntry(e.id));
      actions.append(eb,cb,rb,db);row.append(name,dur,actions);logEl.appendChild(row);
@@ -185,9 +188,11 @@ button:disabled{opacity:.42;cursor:not-allowed}
    totalEl.textContent=fmt(total);
  }
  function refreshActiveRow(){
-   if(!running||activeSource!=="existing"||!activeEntryId)return;
+   if(activeSource!=="existing"||!activeEntryId)return;
    const row=logEl.querySelector('[data-id="'+CSS.escape(activeEntryId)+'"]');if(!row)return;
-   row.classList.add("running");const d=row.querySelector(".duration");if(d)d.textContent=fmtShort(currentSeconds());
+   row.classList.add("running");
+   const d=row.querySelector(".duration");if(d)d.textContent=fmtShort(currentSeconds());
+   const b=row.querySelector(".row-actions button:nth-child(2)");if(b){b.textContent=running?"⏸":"▶";b.title=running?"Pause task":"Resume task";b.setAttribute("aria-label",b.title);b.classList.toggle("is-running",running);b.disabled=false;}
  }
  function updateButtons(){
    startBtn.hidden=running||baseSeconds>0;
@@ -209,12 +214,12 @@ button:disabled{opacity:.42;cursor:not-allowed}
  function copyLog(){
    if(!state.entries.length){toast("Nothing to copy.");return;}
    const total=state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
-   copyText(["⏱ Time Tracking","",...state.entries.map(e=>"- "+e.name+": "+fmtShort(e.seconds)),"","⏱ Total: "+fmtShort(total)].join("\n"));
+   copyText(["Time Tracking","",...state.entries.map(e=>"- "+e.name+": "+fmtShort(e.seconds)),"","==> Total: "+fmtShort(total)].join("\n"));
  }
  function copyTable(){
    if(!state.entries.length){toast("Nothing to copy.");return;}
    const total=state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
-   const lines=["Task | Time","--- | ---",...state.entries.map(e=>e.name+" | "+fmtShort(e.seconds)),"","**Total** | **"+fmtShort(total)+"**"];
+   const lines=["Time Tracking","","Task: Time",...state.entries.map(e=>e.name+": "+fmtShort(e.seconds)),"","==> Total: "+fmtShort(total)];
    copyText(lines.join("\n"));
  }
  function clearLog(){
