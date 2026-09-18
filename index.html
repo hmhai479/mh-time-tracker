@@ -50,7 +50,7 @@ input[type=text]{
 }
 input[type=text]:focus{border-color:var(--accent)}
 input[type=text]:disabled{opacity:.9}
-.actions{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:7px}
+.actions{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
 button.action{
   border:1px solid var(--border);background:var(--button);color:var(--text);
   border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;min-height:34px;
@@ -59,6 +59,20 @@ button.action:hover{background:var(--button-hover)}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 button.primary:hover{background:var(--accent-hover)}
 button:disabled{opacity:.42;cursor:not-allowed}
+.total-inline{
+  display:flex;align-items:center;gap:5px;margin-left:auto;
+  color:var(--muted);font-size:11px;white-space:nowrap;
+}
+.total-inline strong{
+  color:var(--text);font-variant-numeric:tabular-nums;
+  font-family:"SFMono-Regular",Consolas,monospace;
+}
+@media(max-width:700px){
+  .total-inline{margin-left:0}
+}
+@media(max-width:440px){
+  .total-inline{font-size:10px}
+}
 .status{text-align:center;color:var(--muted);font-size:10px;min-height:13px;margin:4px 0 0}
 
 .section{border-top:1px solid var(--border);padding-top:9px;margin-top:2px}
@@ -72,14 +86,22 @@ button:disabled{opacity:.42;cursor:not-allowed}
   background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 7px;
   transition:border-color .12s,background .12s,box-shadow .12s;
 }
+.row{cursor:grab}
+.row:active{cursor:grabbing}
+.row.selected{
+  border-color:var(--accent);background:var(--accent-bg);
+  box-shadow:0 0 0 1px rgba(34,197,94,.12);
+}
 .row.running{
   border:2px solid var(--accent);padding:5px 6px;background:var(--accent-bg);
   box-shadow:0 0 0 2px rgba(34,197,94,.13);
+  cursor:default;
 }
 .name{min-width:0;grid-column:1}
 .name input{padding:4px 6px;font-size:12px}
 .name-text{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row.running .name-text{font-weight:700}
+.row.drag-over{outline:2px dashed var(--accent);outline-offset:1px}
 .duration{
   grid-column:2;grid-row:1;font-variant-numeric:tabular-nums;
   font-family:"SFMono-Regular",Consolas,monospace;color:var(--text);
@@ -156,6 +178,10 @@ button:disabled{opacity:.42;cursor:not-allowed}
       <button id="start" class="action primary" type="button">▶ Start</button>
       <button id="pause" class="action" type="button" hidden>⏸ Pause</button>
       <button id="save" class="action" type="button" disabled>Save session</button>
+      <div class="total-inline"><span>Total</span><strong id="total">00:00:00.00</strong></div>
+      <button id="copyLog" class="action" type="button">Copy Log</button>
+      <button id="copyTable" class="action" type="button">Copy Table</button>
+      <button id="clear" class="action" type="button">Clear Log</button>
     </div>
     <div class="status" id="status" aria-live="polite"></div>
   </div>
@@ -163,12 +189,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
   <section class="section">
     <div class="section-title">WORK LOG</div>
     <div class="log" id="log"></div>
-    <div class="total"><span>TOTAL</span><strong id="total">00:00:00.00</strong></div>
-    <div class="bottom">
-      <button id="copyLog" type="button">Copy Log</button>
-      <button id="copyTable" type="button">Copy Table</button>
-      <button id="clear" type="button">Clear Log</button>
-    </div>
+
   </section>
 </main>
 <div class="toast" id="toast"></div>
@@ -184,6 +205,8 @@ button:disabled{opacity:.42;cursor:not-allowed}
  let baseSeconds=Number(state.active?.baseSeconds)||0;
  let activeSource=state.active?.source==="existing"?"existing":"new";
  let activeEntryId=state.active?.entryId||"";
+ let selectedEntryId=activeSource==="existing" ? activeEntryId : "";
+ let dragId="";
  let raf=0,toastTimer=0,theme=loadTheme();
 
  function normalize(data){
@@ -203,13 +226,25 @@ button:disabled{opacity:.42;cursor:not-allowed}
  function fmt(seconds){seconds=Math.max(0,Number(seconds)||0);let hh=Math.floor((seconds%1)*100);let w=Math.floor(seconds),s=w%60;w=Math.floor(w/60);let m=w%60,h=Math.floor(w/60);return [h,m,s].map(v=>String(v).padStart(2,"0")).join(":")+"."+String(hh).padStart(2,"0");}
  function fmtShort(seconds){seconds=Math.max(0,Math.round(Number(seconds)||0));let s=seconds%60,tm=Math.floor(seconds/60),m=tm%60,h=Math.floor(tm/60),p=[];if(h)p.push(h+"h");if(m||h)p.push(m+"m");if(!h&&!m)p.push(s+"s");else if(s)p.push(s+"s");return p.join(" ");}
  function currentSeconds(){return running?Math.max(0,baseSeconds+(Date.now()-startedAt)/1000):Math.max(0,baseSeconds);}
+ function displaySeconds(){
+   if(running||baseSeconds>0)return currentSeconds();
+   if(selectedEntryId){const e=state.entries.find(x=>x.id===selectedEntryId);if(e)return Math.max(0,Number(e.seconds)||0);}
+   return 0;
+ }
  function stopFrame(){if(raf){cancelAnimationFrame(raf);raf=0;}}
  function setStatus(t=""){statusEl.textContent=t;}
- function renderTimer(){timerEl.textContent=fmt(currentSeconds());if(running)raf=requestAnimationFrame(renderTimer);}
+ function renderTimer(){timerEl.textContent=fmt(displaySeconds());if(running)raf=requestAnimationFrame(renderTimer);}
 
  function startNew(){
    const name=taskInput.value.trim();if(!name){setStatus("Enter a task name first.");taskInput.focus();return;}
-   activeSource="new";activeEntryId="";baseSeconds=0;startedAt=Date.now();running=true;setStatus("");persist();updateButtons();render();stopFrame();renderTimer();
+   if(selectedEntryId){
+     const e=state.entries.find(x=>x.id===selectedEntryId);
+     if(e){
+       activeSource="existing";activeEntryId=e.id;baseSeconds=Math.max(0,Number(e.seconds)||0);
+       startedAt=Date.now();running=true;setStatus("");persist();updateButtons();render();stopFrame();renderTimer();return;
+     }
+   }
+   activeSource="new";activeEntryId="";selectedEntryId="";baseSeconds=0;startedAt=Date.now();running=true;setStatus("");persist();updateButtons();render();stopFrame();renderTimer();
  }
  function pauseOrResume(){
    if(running){baseSeconds=currentSeconds();running=false;startedAt=0;stopFrame();persist();updateButtons();render();renderTimer();}
@@ -221,7 +256,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
    if(seconds<=0){setStatus("Track some time before saving.");return;}
    if(activeSource==="existing"&&activeEntryId){const e=state.entries.find(x=>x.id===activeEntryId);if(e){e.name=name;e.seconds=seconds;}else state.entries.push({id:makeId(),name,seconds});}
    else state.entries.push({id:makeId(),name,seconds});
-   running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";taskInput.value="";stopFrame();persist();render();updateButtons();renderTimer();setStatus("Saved.");
+   running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";selectedEntryId="";taskInput.value="";stopFrame();persist();render();updateButtons();renderTimer();setStatus("Saved.");
  }
  function edit(id){
    if(running)return;
@@ -232,38 +267,73 @@ button:disabled{opacity:.42;cursor:not-allowed}
  function continueEntry(id){
    if(running)return;
    const e=state.entries.find(x=>x.id===id);if(!e)return;
-   taskInput.value=e.name;activeSource="existing";activeEntryId=id;baseSeconds=Math.max(0,Number(e.seconds)||0);startedAt=Date.now();running=true;setStatus("");persist();updateButtons();render();stopFrame();renderTimer();
+   taskInput.value=e.name;activeSource="existing";activeEntryId=id;selectedEntryId=id;baseSeconds=Math.max(0,Number(e.seconds)||0);startedAt=Date.now();running=true;setStatus("");persist();updateButtons();render();stopFrame();renderTimer();
  }
  function resetEntry(id){
    const e=state.entries.find(x=>x.id===id);if(!e)return;
    e.seconds=0;
-   if(activeSource==="existing"&&activeEntryId===id){running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";taskInput.value="";stopFrame();}
+   if(activeSource==="existing"&&activeEntryId===id){running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";selectedEntryId="";taskInput.value="";stopFrame();}
+   else if(selectedEntryId===id){selectedEntryId="";baseSeconds=0;taskInput.value="";}
    persist();render();renderTimer();updateButtons();
  }
  function deleteEntry(id){
    state.entries=state.entries.filter(e=>e.id!==id);
-   if(activeSource==="existing"&&activeEntryId===id){running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";taskInput.value="";stopFrame();}
+   if(activeSource==="existing"&&activeEntryId===id){running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";selectedEntryId="";taskInput.value="";stopFrame();}
+   else if(selectedEntryId===id){selectedEntryId="";baseSeconds=0;taskInput.value="";}
    persist();render();renderTimer();updateButtons();
  }
  function makeId(){try{return crypto.randomUUID();}catch(e){return Date.now().toString(36)+Math.random().toString(36).slice(2);}}
  function btn(label,title,cls=""){const b=document.createElement("button");b.type="button";b.textContent=label;b.title=title;b.setAttribute("aria-label",title);if(cls)b.className=cls;return b;}
+ function selectEntry(id){
+   if(running){
+     if(activeSource==="existing"&&activeEntryId===id)return;
+     setStatus("Pause the current task before selecting another.");
+     return;
+   }
+   const e=state.entries.find(x=>x.id===id);if(!e)return;
+   selectedEntryId=id;activeSource="existing";activeEntryId=id;baseSeconds=Math.max(0,Number(e.seconds)||0);startedAt=0;
+   taskInput.value=e.name;setStatus("");persist();render();updateButtons();renderTimer();
+ }
+ function reorder(fromId,toId){
+   if(!fromId||!toId||fromId===toId)return;
+   const from=state.entries.findIndex(e=>e.id===fromId),to=state.entries.findIndex(e=>e.id===toId);
+   if(from<0||to<0)return;
+   const [item]=state.entries.splice(from,1);state.entries.splice(to,0,item);
+   persist();render();
+ }
  function render(){
    logEl.innerHTML="";
    if(!state.entries.length){const x=document.createElement("div");x.className="empty";x.textContent="No saved tasks yet.";logEl.appendChild(x);}
    else state.entries.forEach(e=>{
-     const row=document.createElement("div"),isSelected=activeSource==="existing"&&activeEntryId===e.id;
-     row.className="row"+(isSelected?" running":"");row.dataset.id=e.id;
-     const name=document.createElement("div");name.className="name";const nt=document.createElement("div");nt.className="name-text";nt.textContent=e.name;name.appendChild(nt);
-     const dur=document.createElement("div");dur.className="duration";dur.textContent=fmtShort(isSelected?currentSeconds():e.seconds);
+     const isSelected=selectedEntryId===e.id;
+     const isRunning=isSelected&&running&&activeSource==="existing"&&activeEntryId===e.id;
+     const row=document.createElement("div");
+     row.className="row"+(isSelected?" selected":"")+(isRunning?" running":"");
+     row.dataset.id=e.id;row.draggable=!isRunning;
+     row.title=isRunning?"Currently running":"Click to select • Drag to reorder";
+
+     row.addEventListener("click",ev=>{
+       if(ev.target.closest("button")||ev.target.closest("input"))return;
+       selectEntry(e.id);
+     });
+     row.addEventListener("dragstart",ev=>{
+       dragId=e.id;row.classList.add("dragging");
+       if(ev.dataTransfer){ev.dataTransfer.effectAllowed="move";ev.dataTransfer.setData("text/plain",e.id);}
+     });
+     row.addEventListener("dragend",()=>{dragId="";row.classList.remove("dragging");});
+     row.addEventListener("dragover",ev=>{ev.preventDefault();if(dragId&&dragId!==e.id)row.classList.add("drag-over");});
+     row.addEventListener("dragleave",()=>row.classList.remove("drag-over"));
+     row.addEventListener("drop",ev=>{ev.preventDefault();row.classList.remove("drag-over");const id=(ev.dataTransfer&&ev.dataTransfer.getData("text/plain"))||dragId;reorder(id,e.id);});
+
+     const name=document.createElement("div");name.className="name";
+     const nt=document.createElement("div");nt.className="name-text";nt.textContent=e.name;name.appendChild(nt);
+     const dur=document.createElement("div");dur.className="duration";dur.textContent=fmtShort(isRunning?currentSeconds():e.seconds);
      const actions=document.createElement("div");actions.className="row-actions";
      const eb=btn("✎","Edit task name");eb.addEventListener("click",()=>edit(e.id));
-     const cb=btn(isSelected&&running?"⏸":"▶",isSelected?(running?"Pause task":"Resume task"):"Start task",isSelected&&running?"is-running":"");
-     cb.addEventListener("click",()=>{
-       if(isSelected) pauseOrResume();
-       else continueEntry(e.id);
-     });
-     const rb=btn("↻","Reset task to zero");rb.addEventListener("click",()=>resetEntry(e.id));
-     const db=btn("×","Delete task","delete");db.addEventListener("click",()=>deleteEntry(e.id));
+     const cb=btn(isRunning?(running?"⏸":"▶"):"▶",isRunning?(running?"Pause task":"Resume task"):(isSelected?"Resume task":"Start task"),isRunning&&running?"is-running":"");
+     cb.addEventListener("click",ev=>{ev.stopPropagation();if(isRunning)pauseOrResume();else continueEntry(e.id);});
+     const rb=btn("↻","Reset task to zero");rb.addEventListener("click",ev=>{ev.stopPropagation();resetEntry(e.id);});
+     const db=btn("×","Delete task","delete");db.addEventListener("click",ev=>{ev.stopPropagation();deleteEntry(e.id);});
      actions.append(eb,cb,rb,db);row.append(name,dur,actions);logEl.appendChild(row);
    });
    const total=state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
@@ -272,12 +342,17 @@ button:disabled{opacity:.42;cursor:not-allowed}
  function refreshActiveRow(){
    if(activeSource!=="existing"||!activeEntryId)return;
    const row=logEl.querySelector('[data-id="'+CSS.escape(activeEntryId)+'"]');if(!row)return;
-   row.classList.add("running");
+   row.classList.toggle("selected",selectedEntryId===activeEntryId);
+   row.classList.toggle("running",running);
    const d=row.querySelector(".duration");if(d)d.textContent=fmtShort(currentSeconds());
-   const b=row.querySelector(".row-actions button:nth-child(2)");if(b){b.textContent=running?"⏸":"▶";b.title=running?"Pause task":"Resume task";b.setAttribute("aria-label",b.title);b.classList.toggle("is-running",running);b.disabled=false;}
+   const b=row.querySelector(".row-actions button:nth-child(2)");
+   if(b){b.textContent=running?"⏸":"▶";b.title=running?"Pause task":"Resume task";b.setAttribute("aria-label",b.title);b.classList.toggle("is-running",running);b.disabled=false;}
  }
  function updateButtons(){
+   const hasSelected=Boolean(selectedEntryId);
    startBtn.hidden=running||baseSeconds>0;
+   if(!running && hasSelected && baseSeconds>0){startBtn.hidden=false;startBtn.textContent="▶ Resume";}
+   else startBtn.textContent="▶ Start";
    pauseBtn.hidden=!(running||baseSeconds>0);
    pauseBtn.textContent=running?"⏸ Pause":"▶ Resume";
    saveBtn.disabled=currentSeconds()<=0||!taskInput.value.trim();
@@ -305,11 +380,13 @@ button:disabled{opacity:.42;cursor:not-allowed}
    copyText(lines.join("\n"));
  }
  function clearLog(){
-   state.entries=[];running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";taskInput.value="";stopFrame();persist();render();renderTimer();updateButtons();
+   state.entries=[];running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";selectedEntryId="";taskInput.value="";stopFrame();persist();render();renderTimer();updateButtons();
  }
  function toast(msg){clearTimeout(toastTimer);toastEl.textContent=msg;toastEl.classList.add("show");toastTimer=setTimeout(()=>toastEl.classList.remove("show"),1400);}
 
- startBtn.addEventListener("click",startNew);pauseBtn.addEventListener("click",pauseOrResume);saveBtn.addEventListener("click",save);$("copyLog").addEventListener("click",copyLog);$("copyTable").addEventListener("click",copyTable);$("clear").addEventListener("click",clearLog);taskInput.addEventListener("input",updateButtons);themeBtn.addEventListener("click",()=>{theme=theme==="dark"?"light":"dark";applyTheme();});
+ startBtn.addEventListener("click",startNew);pauseBtn.addEventListener("click",pauseOrResume);saveBtn.addEventListener("click",save);$("copyLog").addEventListener("click",copyLog);$("copyTable").addEventListener("click",copyTable);$("clear").addEventListener("click",clearLog);
+ taskInput.addEventListener("input",()=>{if(!running&&selectedEntryId){const e=state.entries.find(x=>x.id===selectedEntryId);if(!e||taskInput.value.trim()!==e.name){selectedEntryId="";activeSource="new";activeEntryId="";baseSeconds=0;}}updateButtons();renderTimer();});
+ themeBtn.addEventListener("click",()=>{theme=theme==="dark"?"light":"dark";applyTheme();});
  document.addEventListener("visibilitychange",()=>{if(document.hidden){if(running){baseSeconds=currentSeconds();startedAt=Date.now();persist();}stopFrame();}else{beginAnimation();render();updateButtons();}});
  window.addEventListener("beforeunload",()=>{if(running){baseSeconds=currentSeconds();startedAt=Date.now();}persist();});
  applyTheme();render();updateButtons();beginAnimation();
