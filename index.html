@@ -35,7 +35,7 @@ button,input{font:inherit}
   font-size:clamp(34px,7.2vw,64px);font-weight:600;
   letter-spacing:clamp(-3px,-.32vw,-1.5px);line-height:1;white-space:nowrap;
 }
-.theme-slot{grid-column:3;display:flex;justify-content:flex-end;align-items:center}
+.theme-slot{grid-column:1;display:flex;justify-content:flex-start;align-items:center}
 .theme-btn{
   width:32px;height:29px;padding:0;border:1px solid var(--border);
   background:var(--button);color:var(--text);border-radius:8px;cursor:pointer;line-height:1;
@@ -50,10 +50,10 @@ input[type=text]{
 }
 input[type=text]:focus{border-color:var(--accent)}
 input[type=text]:disabled{opacity:.9}
-.actions{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
+.actions{display:flex;justify-content:center;align-items:center;gap:5px;flex-wrap:nowrap;margin-top:7px;white-space:nowrap}
 button.action{
   border:1px solid var(--border);background:var(--button);color:var(--text);
-  border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;min-height:34px;
+  border-radius:7px;padding:6px 9px;font-size:11px;cursor:pointer;min-height:32px;
 }
 button.action:hover{background:var(--button-hover)}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -148,6 +148,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
   .timerbar{min-height:60px}
   .timer{font-size:clamp(31px,9vw,52px)}
   .log{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .actions{flex-wrap:wrap}
 }
 @media(max-width:440px){
   .app{padding:7px 8px 9px}
@@ -155,7 +156,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
   .timer{font-size:clamp(27px,9.8vw,40px);letter-spacing:-2px}
   .theme-btn{width:29px;height:27px}
   input[type=text]{font-size:12px;padding:7px 8px}
-  button.action{font-size:11px;padding:6px 10px;min-height:32px}
+  button.action{font-size:10px;padding:5px 7px;min-height:30px}
   .log{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -164,11 +165,11 @@ button:disabled{opacity:.42;cursor:not-allowed}
 <body>
 <main class="app" id="tracker">
   <div class="timerbar">
-    <div></div>
-    <div class="timer" id="timer">00:00:00.00</div>
     <div class="theme-slot">
       <button class="theme-btn" id="theme" type="button" aria-label="Switch to dark mode">☾</button>
     </div>
+    <div class="timer" id="timer">00:00:00.00</div>
+    <div></div>
   </div>
 
   <div class="task-area">
@@ -176,11 +177,11 @@ button:disabled{opacity:.42;cursor:not-allowed}
     <input id="task" type="text" maxlength="120" placeholder="e.g. Rigging" autocomplete="off">
     <div class="actions">
       <button id="start" class="action primary" type="button">▶ Start</button>
-      <button id="pause" class="action" type="button" hidden>⏸ Pause</button>
       <button id="save" class="action" type="button" disabled>Save session</button>
       <div class="total-inline"><span>Total</span><strong id="total">00:00:00.00</strong></div>
       <button id="copyLog" class="action" type="button">Copy Log</button>
       <button id="copyTable" class="action" type="button">Copy Table</button>
+      <button id="resetLog" class="action" type="button">Reset Log</button>
       <button id="clear" class="action" type="button">Clear Log</button>
     </div>
     <div class="status" id="status" aria-live="polite"></div>
@@ -198,7 +199,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
  "use strict";
  const KEY="mh-time-tracker-v6", OLD_KEYS=["mh-time-tracker-v4","mh-time-tracker-v3","mh-time-tracker-v2","mh-time-tracker-v1"];
  const $=id=>document.getElementById(id);
- const taskInput=$("task"),timerEl=$("timer"),startBtn=$("start"),pauseBtn=$("pause"),saveBtn=$("save"),statusEl=$("status"),logEl=$("log"),totalEl=$("total"),toastEl=$("toast"),themeBtn=$("theme");
+ const taskInput=$("task"),timerEl=$("timer"),startBtn=$("start"),saveBtn=$("save"),statusEl=$("status"),logEl=$("log"),totalEl=$("total"),toastEl=$("toast"),themeBtn=$("theme");
  let state=loadState();
  let running=Boolean(state.active?.running);
  let startedAt=Number(state.active?.startedAt)||0;
@@ -349,12 +350,9 @@ button:disabled{opacity:.42;cursor:not-allowed}
    if(b){b.textContent=running?"⏸":"▶";b.title=running?"Pause task":"Resume task";b.setAttribute("aria-label",b.title);b.classList.toggle("is-running",running);b.disabled=false;}
  }
  function updateButtons(){
-   const hasSelected=Boolean(selectedEntryId);
-   startBtn.hidden=running||baseSeconds>0;
-   if(!running && hasSelected && baseSeconds>0){startBtn.hidden=false;startBtn.textContent="▶ Resume";}
+   if(running) startBtn.textContent="⏸ Pause";
+   else if(baseSeconds>0) startBtn.textContent="▶ Resume";
    else startBtn.textContent="▶ Start";
-   pauseBtn.hidden=!(running||baseSeconds>0);
-   pauseBtn.textContent=running?"⏸ Pause":"▶ Resume";
    saveBtn.disabled=currentSeconds()<=0||!taskInput.value.trim();
    taskInput.disabled=running;
  }
@@ -379,12 +377,17 @@ button:disabled{opacity:.42;cursor:not-allowed}
    const lines=["⏱ Time Tracking","","Task | Time","--- | ---",...state.entries.map(e=>e.name+" | "+fmtShort(e.seconds)),"","==> Total: "+fmtShort(total)];
    copyText(lines.join("\n"));
  }
+ function resetLog(){
+   state.entries.forEach(e=>e.seconds=0);
+   running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";selectedEntryId="";taskInput.value="";
+   stopFrame();persist();render();renderTimer();updateButtons();
+ }
  function clearLog(){
    state.entries=[];running=false;startedAt=0;baseSeconds=0;activeSource="new";activeEntryId="";selectedEntryId="";taskInput.value="";stopFrame();persist();render();renderTimer();updateButtons();
  }
  function toast(msg){clearTimeout(toastTimer);toastEl.textContent=msg;toastEl.classList.add("show");toastTimer=setTimeout(()=>toastEl.classList.remove("show"),1400);}
 
- startBtn.addEventListener("click",startNew);pauseBtn.addEventListener("click",pauseOrResume);saveBtn.addEventListener("click",save);$("copyLog").addEventListener("click",copyLog);$("copyTable").addEventListener("click",copyTable);$("clear").addEventListener("click",clearLog);
+ startBtn.addEventListener("click",()=>{if(running||baseSeconds>0)pauseOrResume();else startNew();});saveBtn.addEventListener("click",save);$("copyLog").addEventListener("click",copyLog);$("copyTable").addEventListener("click",copyTable);$("resetLog").addEventListener("click",resetLog);$("clear").addEventListener("click",clearLog);
  taskInput.addEventListener("input",()=>{if(!running&&selectedEntryId){const e=state.entries.find(x=>x.id===selectedEntryId);if(!e||taskInput.value.trim()!==e.name){selectedEntryId="";activeSource="new";activeEntryId="";baseSeconds=0;}}updateButtons();renderTimer();});
  themeBtn.addEventListener("click",()=>{theme=theme==="dark"?"light":"dark";applyTheme();});
  document.addEventListener("visibilitychange",()=>{if(document.hidden){if(running){baseSeconds=currentSeconds();startedAt=Date.now();persist();}stopFrame();}else{beginAnimation();render();updateButtons();}});
