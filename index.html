@@ -214,7 +214,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
  function copyLog(){
    if(!state.entries.length){toast("Nothing to copy.");return;}
    const total=state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
-   copyText(["Time Tracking","",...state.entries.map(e=>"- "+e.name+": "+fmtShort(e.seconds)),"","==> Total: "+fmtShort(total)].join("\n"));
+   copyText(["⏱ Time Tracking","",...state.entries.map(e=>"- "+e.name+": "+fmtShort(e.seconds)),"","==> Total: "+fmtShort(total)].join("\n"));
  }
  function copyTable(){
    if(!state.entries.length){toast("Nothing to copy.");return;}
