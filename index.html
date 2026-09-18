@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MH Time Tracker</title>
+<title>MH Time Tracker v4</title>
 <style>
 :root{
   --bg:#f7f7f7;
@@ -69,10 +69,10 @@ button:disabled{opacity:.42;cursor:not-allowed}
 .row-actions button{width:29px;height:29px;padding:0;border:1px solid var(--border);background:var(--button);color:var(--text);border-radius:7px;cursor:pointer}
 .row-actions button:hover{background:var(--button-hover)}
 .row-actions button.delete:hover{color:var(--danger);border-color:var(--danger)}
-.row.running{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
-.row.running .name-text{font-weight:600;color:var(--text)}
-.row.running .duration{color:var(--accent);font-weight:700}
-.row-actions button.is-running{color:var(--accent);border-color:var(--accent);background:var(--accent-bg)}
+.row.running{border:2px solid var(--accent);box-shadow:0 0 0 2px var(--accent-bg),0 0 0 4px rgba(34,197,94,.18),var(--shadow);background:var(--accent-bg)}
+.row.running .name-text{font-weight:700;color:var(--text)}
+.row.running .duration{color:var(--accent);font-weight:800}.row.running .duration::before{content:"● ";font-size:9px}
+.row-actions button.is-running{color:#fff;background:var(--accent);border-color:var(--accent);font-weight:800;box-shadow:0 0 0 2px var(--accent-bg)}
 :root{--accent-bg:#dcfce7}
 :root.dark{--accent-bg:#12351f}
 .total{display:flex;justify-content:space-between;margin-top:8px;color:var(--muted);font-size:12px}
@@ -485,13 +485,30 @@ button:disabled{opacity:.42;cursor:not-allowed}
 
   function copyLog(){
     if(!state.entries.length){ toast("Nothing to copy."); return; }
-    const lines = ["Time Tracking","",...state.entries.map(e => e.name + ": " + fmtShort(e.seconds)),"", "Total: " + fmtShort(state.entries.reduce((a,e)=>a+e.seconds,0))];
+    const total = state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
+    const lines = ["⏱ Time Tracking","",...state.entries.map(e => "- " + e.name + ": " + fmtShort(e.seconds)),"","⏱ Total: " + fmtShort(total)];
     copyText(lines.join("\n"));
   }
 
   function copyTable(){
     if(!state.entries.length){ toast("Nothing to copy."); return; }
-    const lines = ["Task - Time",...state.entries.map(e => "- " + e.name + " - " + fmtShort(e.seconds)),"Total - " + fmtShort(state.entries.reduce((a,e)=>a+e.seconds,0))];
+    const total = state.entries.reduce((a,e)=>a+Math.max(0,Number(e.seconds)||0),0);
+    const maxName = Math.max(4, ...state.entries.map(e => String(e.name).length), 5);
+    const nameW = Math.min(34, maxName);
+    const fit = name => { const raw = String(name); return raw.length > nameW ? raw.slice(0,nameW-1) + "…" : raw.padEnd(nameW," "); };
+    const timeW = 11;
+    const line = (a,b,c) => a + "─".repeat(nameW+2) + b + "─".repeat(timeW+2) + c;
+    const lines = [
+      "⏱ TIME REPORT",
+      "",
+      "┌─" + "─".repeat(nameW+2) + "┬─" + "─".repeat(timeW+2) + "┐",
+      "│ " + fit("Task") + " │ " + "Time".padEnd(timeW," ") + " │",
+      "├─" + "─".repeat(nameW+2) + "┼─" + "─".repeat(timeW+2) + "┤",
+      ...state.entries.map(e => "│ " + fit(e.name) + " │ " + fmtShort(e.seconds).padEnd(timeW," ") + " │"),
+      "├─" + "─".repeat(nameW+2) + "┼─" + "─".repeat(timeW+2) + "┤",
+      "│ " + fit("TOTAL") + " │ " + fmtShort(total).padEnd(timeW," ") + " │",
+      "└─" + "─".repeat(nameW+2) + "┴─" + "─".repeat(timeW+2) + "┘"
+    ];
     copyText(lines.join("\n"));
   }
 
