@@ -16,68 +16,150 @@
   --button:#242424;--button-hover:#2e2e2e;--accent-bg:#12351f;--danger:#ef4444;
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+html,body{
+  margin:0;padding:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  overflow-x:hidden;
+}
 body{min-height:100%}
 button,input{font:inherit}
-.app{width:100%;max-width:760px;margin:0 auto;padding:10px 14px 14px;background:var(--bg)}
-.topbar{display:flex;justify-content:flex-end;height:28px;margin-bottom:2px}
-.theme-btn{width:34px;height:30px;padding:0;border:1px solid var(--border);background:var(--button);color:var(--text);border-radius:8px;cursor:pointer;line-height:1}
+.app{width:100%;max-width:820px;margin:0 auto;padding:8px 12px 12px;background:var(--bg)}
+
+.timerbar{
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  gap:7px;min-height:68px;
+}
+.timer{
+  grid-column:2;color:var(--timer);font-variant-numeric:tabular-nums;
+  font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  font-size:clamp(34px,7.2vw,64px);font-weight:600;
+  letter-spacing:clamp(-3px,-.32vw,-1.5px);line-height:1;white-space:nowrap;
+}
+.theme-slot{grid-column:3;display:flex;justify-content:flex-end;align-items:center}
+.theme-btn{
+  width:32px;height:29px;padding:0;border:1px solid var(--border);
+  background:var(--button);color:var(--text);border-radius:8px;cursor:pointer;line-height:1;
+}
 .theme-btn:hover{background:var(--button-hover)}
-label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-input[type=text]{width:100%;border:1px solid var(--border);background:var(--input);color:var(--text);border-radius:9px;padding:10px 12px;font-size:15px;outline:none;transition:border-color .12s,background .12s}
+
+.task-area{margin-top:2px;margin-bottom:9px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+input[type=text]{
+  width:100%;border:1px solid var(--border);background:var(--input);color:var(--text);
+  border-radius:8px;padding:8px 10px;font-size:14px;outline:none;
+}
 input[type=text]:focus{border-color:var(--accent)}
 input[type=text]:disabled{opacity:.9}
-.timer{display:flex;justify-content:center;align-items:baseline;color:var(--timer);font-variant-numeric:tabular-nums;font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:clamp(40px,8vw,68px);font-weight:600;letter-spacing:-3px;line-height:1;margin:17px 0 15px;min-height:68px}
-.actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
-button.action{border:1px solid var(--border);background:var(--button);color:var(--text);border-radius:9px;padding:10px 15px;font-size:14px;cursor:pointer;min-height:40px}
+.actions{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:7px}
+button.action{
+  border:1px solid var(--border);background:var(--button);color:var(--text);
+  border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;min-height:34px;
+}
 button.action:hover{background:var(--button-hover)}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 button.primary:hover{background:var(--accent-hover)}
 button:disabled{opacity:.42;cursor:not-allowed}
-.status{text-align:center;color:var(--muted);font-size:12px;min-height:15px;margin:6px 0 8px}
-.section{border-top:1px solid var(--border);padding-top:11px;margin-top:5px}
-.section-title{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
-.log{display:flex;flex-direction:column;gap:5px}
-.row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 8px;transition:border-color .12s,background .12s,box-shadow .12s}
-.row.running{border:2px solid var(--accent);padding:6px 7px;background:var(--accent-bg);box-shadow:0 0 0 2px rgba(34,197,94,.13)}
-.name{min-width:0}
-.name input{padding:6px 8px;font-size:14px}
-.name-text{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status{text-align:center;color:var(--muted);font-size:10px;min-height:13px;margin:4px 0 0}
+
+.section{border-top:1px solid var(--border);padding-top:9px;margin-top:2px}
+.section-title{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.log{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;
+}
+.row{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;
+  gap:4px 5px;align-items:center;min-width:0;
+  background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 7px;
+  transition:border-color .12s,background .12s,box-shadow .12s;
+}
+.row.running{
+  border:2px solid var(--accent);padding:5px 6px;background:var(--accent-bg);
+  box-shadow:0 0 0 2px rgba(34,197,94,.13);
+}
+.name{min-width:0;grid-column:1}
+.name input{padding:4px 6px;font-size:12px}
+.name-text{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row.running .name-text{font-weight:700}
-.duration{font-variant-numeric:tabular-nums;font-family:"SFMono-Regular",Consolas,monospace;color:var(--text);font-size:12px;white-space:nowrap}
+.duration{
+  grid-column:2;grid-row:1;font-variant-numeric:tabular-nums;
+  font-family:"SFMono-Regular",Consolas,monospace;color:var(--text);
+  font-size:10px;white-space:nowrap;
+}
 .row.running .duration{color:var(--accent);font-weight:800}
-.row.running .duration::before{content:"● ";font-size:8px}
-.row-actions{display:flex;gap:4px}
-.row-actions button{width:29px;height:29px;padding:0;border:1px solid var(--border);background:var(--button);color:var(--text);border-radius:7px;cursor:pointer}
+.row.running .duration::before{content:"● ";font-size:6px}
+.row-actions{
+  grid-column:1/-1;grid-row:2;display:flex;gap:3px;justify-content:flex-end;
+}
+.row-actions button{
+  width:26px;height:26px;padding:0;border:1px solid var(--border);
+  background:var(--button);color:var(--text);border-radius:6px;cursor:pointer;
+}
 .row-actions button:hover{background:var(--button-hover)}
-.row-actions button.is-running{color:#fff;background:var(--accent);border-color:var(--accent);font-weight:800;box-shadow:0 0 0 2px var(--accent-bg)}
+.row-actions button.is-running{
+  color:#fff;background:var(--accent);border-color:var(--accent);
+  font-weight:800;box-shadow:0 0 0 2px var(--accent-bg);
+}
 .row-actions button.delete:hover{color:var(--danger);border-color:var(--danger)}
-.total{display:flex;justify-content:space-between;margin-top:8px;color:var(--muted);font-size:12px}
-.total strong{color:var(--text);font-variant-numeric:tabular-nums;font-family:"SFMono-Regular",Consolas,monospace}
-.bottom{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px}
-.bottom button{border:1px solid var(--border);background:var(--button);color:var(--text);border-radius:7px;font-size:11px;padding:7px 9px;cursor:pointer}
+.total{
+  display:flex;justify-content:space-between;margin-top:7px;color:var(--muted);font-size:10px
+}
+.total strong{
+  color:var(--text);font-variant-numeric:tabular-nums;
+  font-family:"SFMono-Regular",Consolas,monospace;
+}
+.bottom{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap;margin-top:7px}
+.bottom button{
+  border:1px solid var(--border);background:var(--button);color:var(--text);
+  border-radius:6px;font-size:9px;padding:5px 7px;cursor:pointer
+}
 .bottom button:hover{background:var(--button-hover)}
-.empty{color:var(--muted);font-size:12px;padding:7px 1px}
-.toast{position:fixed;left:50%;bottom:15px;transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:8px;padding:7px 11px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:10}
+.empty{color:var(--muted);font-size:10px;padding:6px 1px;grid-column:1/-1}
+.toast{
+  position:fixed;left:50%;bottom:10px;transform:translateX(-50%);
+  background:var(--text);color:var(--bg);border-radius:7px;padding:6px 9px;
+  font-size:10px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:10
+}
 .toast.show{opacity:1}
-@media(max-width:430px){
- .app{padding:9px 10px 12px}.timer{font-size:42px;letter-spacing:-2px;min-height:50px;margin:14px 0}.row{grid-template-columns:minmax(0,1fr) auto}.duration{justify-self:end}.row-actions{grid-column:1/-1;justify-content:flex-end}
+
+@media(max-width:700px){
+  .app{padding:7px 10px 10px}
+  .timerbar{min-height:60px}
+  .timer{font-size:clamp(31px,9vw,52px)}
+  .log{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:440px){
+  .app{padding:7px 8px 9px}
+  .timerbar{min-height:52px}
+  .timer{font-size:clamp(27px,9.8vw,40px);letter-spacing:-2px}
+  .theme-btn{width:29px;height:27px}
+  input[type=text]{font-size:12px;padding:7px 8px}
+  button.action{font-size:11px;padding:6px 10px;min-height:32px}
+  .log{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <main class="app" id="tracker">
-  <div class="topbar"><button class="theme-btn" id="theme" type="button" aria-label="Switch to dark mode">☾</button></div>
-  <label for="task">Task</label>
-  <input id="task" type="text" maxlength="120" placeholder="e.g. Rigging" autocomplete="off">
-  <div class="timer" id="timer">00:00:00.00</div>
-  <div class="actions">
-    <button id="start" class="action primary" type="button">▶ Start</button>
-    <button id="pause" class="action" type="button" hidden>⏸ Pause</button>
-    <button id="save" class="action" type="button" disabled>Save session</button>
+  <div class="timerbar">
+    <div></div>
+    <div class="timer" id="timer">00:00:00.00</div>
+    <div class="theme-slot">
+      <button class="theme-btn" id="theme" type="button" aria-label="Switch to dark mode">☾</button>
+    </div>
   </div>
-  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="task-area">
+    <label for="task">Task</label>
+    <input id="task" type="text" maxlength="120" placeholder="e.g. Rigging" autocomplete="off">
+    <div class="actions">
+      <button id="start" class="action primary" type="button">▶ Start</button>
+      <button id="pause" class="action" type="button" hidden>⏸ Pause</button>
+      <button id="save" class="action" type="button" disabled>Save session</button>
+    </div>
+    <div class="status" id="status" aria-live="polite"></div>
+  </div>
+
   <section class="section">
     <div class="section-title">WORK LOG</div>
     <div class="log" id="log"></div>
