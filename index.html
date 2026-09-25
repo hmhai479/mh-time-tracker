@@ -517,8 +517,21 @@ button:disabled{opacity:.42;cursor:not-allowed}
    raf=requestAnimationFrame(animationLoop);
  }
  function beginAnimation(){stopFrame();if(running)raf=requestAnimationFrame(animationLoop);else renderTimer();}
+ function legacyCopy(text){
+   const ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");
+   ta.style.cssText="position:fixed;left:-9999px;top:0;width:1px;height:1px;padding:0;border:0;opacity:0";
+   document.body.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);
+   let copied=false;try{copied=document.execCommand("copy");}catch(e){}ta.remove();return copied;
+ }
  async function copyText(text){
-   try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(text);else{const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();}toast("Copied to clipboard.");}catch(e){toast("Copy failed.");}
+   // execCommand must run synchronously inside the button click.  This remains
+   // the most compatible path for embedded Notion pages, where Clipboard API
+   // permission is often unavailable.
+   if(legacyCopy(text)){toast("Copied to clipboard.");return;}
+   try{
+     if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);toast("Copied to clipboard.");return;}
+   }catch(e){}
+   toast("Copy is blocked by this embed. Open the widget directly, then copy.");
  }
  function copyLog(){
    if(!state.entries.length){toast("Nothing to copy.");return;}
